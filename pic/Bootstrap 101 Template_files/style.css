@@ -1,0 +1,17 @@
+.a {
+    padding: 10px 16px;
+    font-size: 18px;
+    line-height: 1.3333333;
+    border-radius: 6px;
+    color: black;
+}	lement {
+}
+.breadcrumb {
+    padding: 0px 55px;
+    margin-bottom: 20px;
+    list-style: none;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    color: red;
+    content: "/";
+}

@@ -1,0 +1,801 @@
+var cubex = cubex || {};
+
+if (!("configIdPageView" in cubex)) {
+  cubex.configIdPageView = generateUniqueId();
+  cubex.reqn = 1;
+  cubex.pvcount = 1;
+  cubex.scrollamount = 0;
+} else {
+  cubex.reqn = cubex.reqn + 1;
+  cubex.pvcount = 0;
+}
+
+/**
+ * Wizards BD Adnetworks
+ *
+ * @link https://www.wizardsbd.com
+ * @copyright Copyright (c) 2016-2017 Cubex Tech Ltd. All Rights Reserved
+ * @license Commercial (Trade-Secret)
+ */
+
+var adserver_domain = 'www.wizardsbd.com';
+var script_name = 'deliver.js';
+var delivery_path = '/delivery/impress';
+
+documentAlias = document,
+navigatorAlias = navigator,
+screenAlias = screen,
+windowAlias = window,
+
+browserFeatures = {},
+
+/* performance timing */
+performanceAlias = windowAlias.performance || windowAlias.mozPerformance || windowAlias.msPerformance || windowAlias.webkitPerformance;
+var networkState = navigatorAlias.connection;
+var dnt = navigatorAlias.doNotTrack;
+
+var didScroll = false;
+
+function generateUniqueId() {
+    var id = '';
+    var chars = 'abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    var charLen = chars.length;
+    var i;
+
+    for (i = 0; i < 32; i++) {
+        id += chars.charAt(Math.floor(Math.random() * charLen));
+    }
+
+    return id;
+}
+
+/*
+ * Browser features (plugins, resolution, cookies)
+ */
+function detectBrowserFeatures() {
+    var i,
+        mimeType,
+        pluginMap = {
+            // document types
+            pdf: 'application/pdf',
+
+            // media players
+            qt: 'video/quicktime',
+            realp: 'audio/x-pn-realaudio-plugin',
+            wma: 'application/x-mplayer2',
+
+            // interactive multimedia
+            dir: 'application/x-director',
+            fla: 'application/x-shockwave-flash',
+
+            // RIA
+            java: 'application/x-java-vm',
+            gears: 'application/x-googlegears',
+            ag: 'application/x-silverlight'
+        };
+
+    // detect browser features except IE < 11 (IE 11 user agent is no longer MSIE)
+    if (!((new RegExp('MSIE')).test(navigatorAlias.userAgent))) {
+        // general plugin detection
+        if (navigatorAlias.mimeTypes && navigatorAlias.mimeTypes.length) {
+            for (i in pluginMap) {
+                if (Object.prototype.hasOwnProperty.call(pluginMap, i)) {
+                    mimeType = navigatorAlias.mimeTypes[pluginMap[i]];
+                    browserFeatures[i] = (mimeType && mimeType.enabledPlugin) ? '1' : '0';
+                }
+            }
+        }
+
+        // Safari and Opera
+        // IE6/IE7 navigator.javaEnabled can't be aliased, so test directly
+        // on Edge navigator.javaEnabled() always returns `true`, so ignore it
+        if (!((new RegExp('Edge[ /](\\d+[\\.\\d]+)')).test(navigatorAlias.userAgent)) &&
+                typeof navigator.javaEnabled !== 'unknown' &&
+                isDefined(navigatorAlias.javaEnabled) &&
+                navigatorAlias.javaEnabled()) {
+            browserFeatures.java = '1';
+        }
+
+        // Firefox
+        if (isFunction(windowAlias.GearsFactory)) {
+            browserFeatures.gears = '1';
+        }
+
+        // other browser features
+        browserFeatures.cookie = hasCookies();
+    }
+
+    var width = parseInt(screenAlias.width, 10);
+    var height = parseInt(screenAlias.height, 10);
+    browserFeatures.resw = parseInt(width, 10);
+    browserFeatures.resh = parseInt(height, 10);
+    browserFeatures.pxratio = windowAlias.devicePixelRatio;
+    browserFeatures.hardwareConcurrency = navigatorAlias.hardwareConcurrency;
+}
+
+/*
+ * Is property defined?
+ */
+function isDefined(property) {
+    // workaround https://github.com/douglascrockford/JSLint/commit/24f63ada2f9d7ad65afc90e6d949f631935c2480
+    var propertyType = typeof property;
+
+    return propertyType !== 'undefined';
+}
+
+/*
+ * Is property a function?
+ */
+function isFunction(property) {
+    return typeof property === 'function';
+}
+
+    /*
+     * Does browser have cookies enabled (for this site)?
+     */
+    function hasCookies() {
+
+        if (!isDefined(navigatorAlias.cookieEnabled)) {
+            var testCookieName = getCookieName('testcookie');
+            setCookie(testCookieName, '1');
+
+            return getCookie(testCookieName) === '1' ? '1' : '0';
+        }
+
+        return navigatorAlias.cookieEnabled ? '1' : '0';
+    }
+
+function getMetaContents(mn){
+  var m = document.getElementsByTagName('meta');
+  for(var i in m){
+   if(m[i].name == mn){
+     return m[i].content;
+   }
+  }
+}
+
+
+
+var title = unescape(encodeURIComponent(document.title));
+
+var keywords = unescape(encodeURIComponent(getMetaContents('keywords')));
+
+
+if (typeof WZRDS_AdsiFrame_Opts === "undefined") {
+  
+  var WZRDS_AdsiFrame_Opts = null;
+  
+}
+
+if (typeof WZRDS_placement_id === "undefined") {
+  
+  var WZRDS_placement_id = null;
+
+}
+
+var WZRDS_AdsiFrame=(function() {
+  
+  function isInIframe() {
+   
+    return self !== top;
+  
+  }
+  
+  function getScriptTag() {
+    
+    if('currentScript' in document) {
+      return document.currentScript;
+    }
+    
+    var scripts = document.getElementsByTagName('script');
+    var last_script = scripts[scripts.length-1];
+    var rg = new RegExp(script_name, 'i');
+    if(last_script.src.search(rg) >= 0) {
+      return last_script;
+    } else {
+      try{
+        for(var n = scripts.length-1; n >= 0; n--) { 
+          if(scripts[n].src.search(rg) >= 0) {
+            return scripts[n];
+          }
+        }
+      }catch(e) {
+        
+      }
+    }
+    return last_script;
+  }
+  
+  function getQueryString() {
+    
+    var myScript=getScriptTag();
+    var rg = new RegExp(script_name, 'i');
+    if(myScript.src.search(rg) >= 0) {
+      return myScript.src.replace(/^[^\?]+\??/,'');
+    } else {
+      return false;
+    }
+  }
+  
+  function getQueryStringArg(qs, key, default_) {
+    
+    default_ = default_||'';
+    var query_obj = {};
+   
+    qs.replace( new RegExp("([^?=&]+)(=([^&]*))?","g"), function($0,$1,$2,$3) { query_obj[$1] = $3; } );
+    
+    if(typeof(query_obj[key]) === 'undefined' || query_obj[key] === null) {
+      return default_;
+    } else {
+      return query_obj[key];
+    }
+  }
+  
+  function getSiteURL() {
+    
+    var site_loc='';
+    
+    try{
+      if(isInIframe() && document.referrer) {
+        site_loc = document.referrer.replace(/^\s+|\s+$/g,'');
+      } else {
+        site_loc = document.location.href;
+      }
+    } catch(e) {
+      
+    }
+    return site_loc.replace(/["']/g,'');
+  }
+  
+  function getRefSiteURL() {
+    
+    var ref='';
+    if(!isInIframe()) {
+      ref=document.referrer.replace(/^\s+|\s+$|["']/g,'');
+    }
+    return ref;
+  }
+
+  function getDocTitle() {
+    var doc_title = document.title;
+    return doc_title;
+  }
+  
+  function getOD() {
+    
+    return parseUri(document.location.href.replace(/["']/g,'')).host;
+  
+  }
+
+  function getWZRDSZoneId(zoneid) {
+    
+    var id = 'WZRDS_' + zoneid;
+    
+    var obj = document.getElementById(id);
+    
+    if(!obj) {
+      return id;
+    }
+    
+    var i = 1;
+    
+    while(obj) {
+      
+      id = 'WZRDS_' + zoneid + '_' + i;
+      obj = document.getElementById(id);
+      i++;
+    }
+    return id;
+  }
+
+  function getWZRDSVisibility(id, viewport, width, height){
+    
+    var ret="";
+    
+    if(!viewport || viewport.status != "ok") {
+      ret="error";
+    }
+    
+    try {
+      
+      var rect = getWZRDSPosition(id);
+      ret = ((rect.x+rect.width <= viewport.x + viewport.width) && (rect.x+rect.width + parseInt(width) >= 0) && (rect.y + rect.height <= viewport.y + viewport.height) && (rect.y + rect.height + parseInt(height) >= 0));
+    } catch(e) { 
+      
+      ret="error";
+    }
+    
+    return ret == true ? 1 : 0;
+  }
+  
+  function getWZRDSAtf(id, viewport){
+    
+    var ret="";
+    
+    if(!viewport || viewport.status != "ok") {
+      ret="error";
+    }
+    
+    try {
+      
+      var rect = getWZRDSPosition(id);
+      ret = ((rect.x+rect.width <= viewport.x + viewport.width) && (rect.y + rect.height <= viewport.y + viewport.height));
+      
+    } catch(e) { 
+      
+      ret="error";
+    }
+    
+    return ret == true ? 1 : 0;
+  }
+  function getWZRDSPosition(id, width, height) {
+    
+    var w = (width) ? width : 0; 
+    var h = (height) ? height : 0;
+    var y = 0;
+    var x = 0;
+    var rect = { x:x, y:y, width:w, height:h };
+    var de = document.documentElement;
+    
+    try {
+      
+      var obj = document.getElementById(id);
+      while (obj) { 
+        rect.x += obj.offsetLeft;
+        rect.y += obj.offsetTop;
+        obj = obj.offsetParent;
+      }
+      
+      if(self.pageYOffset) {
+        rect.x -= self.pageXOffset;
+        rect.y -= self.pageYOffset;
+        
+      } else if (de && de.scrollTop) {
+        rect.x -= de.scrollLeft;
+        rect.y -= de.scrollTop;
+      
+      } else if (document.body) {
+        rect.x -= document.body.scrollLeft;
+        rect.y -= document.body.scrollTop;
+      
+      }
+    } catch(e){
+      
+    }
+
+    return rect;
+  }
+  
+function getWZRDSViewport() {
+      
+    var viewport = {x:0,y:0,width:0,height:0,status:''}
+    var bw = 0;
+    var bh = 0;
+    var de = de;
+    var w = window;
+    var db = document.body;
+    
+    try {
+      
+      if (typeof w.innerWidth==='number') {
+        bw=w.innerWidth;
+        bh=w.innerHeight;
+      } else if(de && (de.clientWidth || de.clientHeight)) {
+        bw = de.clientWidth;
+        bh = de.clientHeight;
+      } else if (db && (db.clientWidth || db.clientHeight)) {
+        bw = db.clientWidth;
+        bh = db.clientHeight;
+      } else if (de && (de.offsetWidth || de.offsetHeight)) {
+        bw = de.offsetWidth;
+        bh = de.offsetHeight;
+      }
+     
+      viewport.status = "ok";
+      viewport.width = bw;
+      viewport.height = bh;
+      
+    } catch(e){ 
+      viewport.status="error";
+    }
+    
+    return viewport;
+  }
+
+var winheight = window.innerHeight || (document.documentElement || document.body).clientHeight;
+
+function getDocHeight() {
+  var D = document;
+  return Math.max(
+    D.body.scrollHeight, D.documentElement.scrollHeight,
+    D.body.offsetHeight, D.documentElement.offsetHeight,
+    D.body.clientHeight, D.documentElement.clientHeight
+  )
+}
+
+function amountscrolled(){
+    var winheight= window.innerHeight || (document.documentElement || document.body).clientHeight;
+    var docheight = getDocHeight();
+    var scrollTop = window.pageYOffset || (document.documentElement || document.body.parentNode || document.body).scrollTop;
+    var trackLength = docheight - winheight;
+    var pctScrolled = Math.floor(scrollTop/trackLength * 100); // gets percentage scrolled (ie: 80 or NaN if tracklength == 0)
+    cubex.scrollamount = pctScrolled;
+}
+  
+function parseUri(u) {
+    
+    try{
+      
+      var o = {
+          key:["source","protocol","authority","userInfo","user","password","host","port","relative","path","directory","file","query","anchor"],
+          q:{name:"queryKey", parser:/(?:^|&)([^&=]*)=?([^&]*)/g},
+          parser:{loose:/^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/}
+      };
+      
+      var m = o.parser.loose.exec(u);
+      var uri={};
+      
+      var i = 14;
+      while(i--) {
+        uri[o.key[i]] = m[i] || '';
+      }
+      
+      uri[o.q.name] = {};
+      uri[o.key[12]].replace(o.q.parser, function($0,$1,$2){ if($1) uri[o.q.name][$1]=$2; } );
+      
+      return uri;
+      
+    } catch(e) {
+      this.reportError('Failed to get OD',e);
+    }
+    
+    return u;
+  }
+
+function getWZRDSQueryString(id, qs, atf, add_all_tokens) {
+    
+    var qstring = '?atf=' + atf;
+    
+    var viewport = getWZRDSViewport();
+    
+    if(viewport && viewport.status == "ok") {
+      qstring += '&scres_height=' + viewport.height;
+      qstring += '&scres_width=' + viewport.width;
+    }
+
+    var adPosition = getWZRDSPosition(id);
+    
+    if(adPosition) {
+      qstring += '&adpos_x=' + adPosition.x;
+      qstring += '&adpos_y=' + adPosition.y;
+    }
+    
+    var e = encodeURIComponent;
+  
+    if (add_all_tokens) {
+      qstring += '&loc=' + e(getSiteURL()) + '&od=' + e(getOD()) + '&ref=' + e(getRefSiteURL());
+    }
+    
+    var args = qs.split('&');
+  
+    for (var i = 0; i < args.length; i++) {
+      
+      var arg = args[i].split('=')
+      var key = arg[0]
+      var value = arg[1];
+      
+      if (key === 'debug' 
+        || key === 'u' 
+        || key === 'zoneid' 
+        || key === 'pzoneid' 
+        || key === 'n' 
+        || key === 'WZRDS_domain'
+        || key.match(/^WZRDS_/)
+      ) { 
+        qstring += '&' + e(key) + "=" + e(value);
+      }
+    }
+    
+    return qstring;
+}
+
+function createiFrame(id, width, height) {
+
+    var ifrm = document.createElement('iframe');
+    
+    ifrm.setAttribute('id',id);
+    ifrm.setAttribute('name','738e1ae42c1c5cf608a884732dea182a');
+    ifrm.setAttribute('margin','0');
+    ifrm.setAttribute('padding','0');
+    ifrm.setAttribute('frameBorder','0');
+    ifrm.setAttribute('width',width+'');
+    ifrm.setAttribute('height',height+'');
+    ifrm.setAttribute('scrolling','no');
+  
+    try {
+      
+      ifrm.style.margin = "0px";
+      ifrm.style.padding = "0px";
+      ifrm.style.border = '0px none';
+      ifrm.style.width = width + "px";
+      ifrm.style.height = height + "px";
+      ifrm.style.overflow = 'hidden';
+      ifrm.style.maxWidth = '100%';
+      ifrm.style.maxHeight = 'auto';
+      
+    } catch(e) {
+      
+    }
+    
+    return ifrm;
+}
+
+window.onscroll = doThisStuffOnScroll;
+
+function doThisStuffOnScroll() {
+    didScroll = true;
+    amountscrolled();
+}
+
+setInterval(function() {
+    if(didScroll) {
+        didScroll = false;
+        position(id);
+    }
+}, 100);
+
+// now process the ad tag
+var time = new Date().getTime();
+var qs = null;
+var scriptTag;
+var fpTag;
+
+if (WZRDS_AdsiFrame_Opts!==null) {
+    
+    qs = WZRDS_AdsiFrame_Opts;
+
+} else {
+  
+    qs = getQueryString();
+
+}
+
+var cdpnLocTag = "<script type='text/javascript'>var WZRDS_Loc={};" + "WZRDS_Loc.loc='" + getSiteURL() 
+          + "';WZRDS_Loc.ref='" + getRefSiteURL() 
+          + "';WZRDS_Loc.ifr='" + (isInIframe() ? '1' : '0') 
+          + "';WZRDS_Loc.od='" + getOD() + "';</script>";
+
+var domain = getQueryStringArg(qs,'WZRDS_domain', adserver_domain);
+
+var abf = 0;
+var id_type = 'pzoneid';
+var id = getQueryStringArg(qs, 'pzoneid');
+if (!id) {
+  id = getQueryStringArg(qs, 'zoneid');
+  id_type = 'zoneid';
+}
+  var width = getQueryStringArg(qs, 'width', 160);
+  var height = getQueryStringArg(qs, 'height', 600);
+
+  abf = getWZRDSVisibility(id, getWZRDSViewport(), width, height);
+
+var org_tld = getQueryStringArg(qs, 'tld', "");
+var ct_url = getQueryStringArg(qs, 'ct0', "");
+var buyer_id = getQueryStringArg(qs, 'buyerid', "");
+var sndprc = getQueryStringArg(qs, 'sndprc', "");
+var ui = getQueryStringArg(qs, 'ui', "");
+var cb = Math.round(new Date().getTime() / 1000);
+
+
+var hb            = getQueryStringArg(qs, 'hb', "false");
+var hb_adid         = getQueryStringArg(qs, 'hb_adid', "");
+var hb_bidder         = getQueryStringArg(qs, 'hb_bidder', "");
+var hb_adsquare_bidder_id   = getQueryStringArg(qs, 'hb_adsquare_bidder_id', "");
+var hb_pb           = getQueryStringArg(qs, 'hb_pb', "");
+var houseAds        = getQueryStringArg(qs, 'houseAds', "");
+
+detectBrowserFeatures();
+
+if(getQueryStringArg(qs, 'wiztag', 'true') === 'false')
+  var wiztag = 'false';
+else var wiztag = "true";
+
+
+var adQueryString = getWZRDSQueryString(id, qs, abf, false);
+adQueryString += "&dt=in";
+adQueryString += "&buyerid=" + escape(buyer_id);
+adQueryString += "&loc=" + escape(getSiteURL());
+adQueryString += "&ref=" + escape(getRefSiteURL());
+adQueryString += "&ifr=" + (isInIframe() ? '1' : '0');
+adQueryString += "&tld=" + escape(getOD());
+adQueryString += "&sndprc=" + escape(sndprc);
+adQueryString += "&ui=" + ui;
+adQueryString += "&ct=" + escape(ct_url);
+adQueryString += "&org_tld=" + escape(org_tld);
+adQueryString += "&dnt=" + dnt;
+adQueryString += "&pvid=" + cubex.configIdPageView;
+adQueryString += "&pvc=" + cubex.pvcount;
+adQueryString += "&rn=" + cubex.reqn;
+adQueryString += "&scmt=" + cubex.scrollamount;
+adQueryString += "&reqts=" + time;
+if (typeof jsci != "undefined") {
+  adQueryString += "&jsci=" + jsci;
+}
+adQueryString += "&pdf=" + browserFeatures.pdf + "&realp=" + browserFeatures.realp + "&wma=" + browserFeatures.wma + "&dir=" + browserFeatures.dir + "&fla=" + browserFeatures.fla + "&java=" + browserFeatures.java + "&gears=" + browserFeatures.gears + "&ag=" + browserFeatures.ag + "&cookie=" + browserFeatures.cookie + "&rw=" + browserFeatures.resw + "&rh=" + browserFeatures.resh  + "&pxr=" + browserFeatures.pxratio + "&hcc=" + browserFeatures.hardwareConcurrency;
+
+if (typeof networkState != "undefined") {
+  adQueryString += "&dn=" + networkState.downlink + "&et=" + networkState.effectiveType + "&rtt=" + networkState.rtt;
+}
+
+if (performanceAlias && performanceAlias.timing && performanceAlias.timing.requestStart && performanceAlias.timing.responseEnd) {
+  adQueryString += "&p_ms=" + (performanceAlias.timing.responseEnd - performanceAlias.timing.requestStart);
+}
+adQueryString += "&cb=" + cb;
+adQueryString += "&title=" + title;
+adQueryString += "&kywrd=" + keywords;
+adQueryString += "&wiztag=" + wiztag;
+
+
+if (hb == "true") {
+  adQueryString += "&hb="           + hb;
+  adQueryString += "&hb_adid="        + hb_adid;
+  adQueryString += "&hb_bidder="        + hb_bidder;
+  adQueryString += "&hb_adsquare_bidder_id="  + hb_adsquare_bidder_id;
+  adQueryString += "&hb_pb="          + hb_pb;
+  adQueryString += "&houseAds="         + houseAds;
+}
+
+var fpIfm = 'https://' + domain + delivery_path + adQueryString;
+var fpTag = '<scr'+'ipt type="text/javascript" src="https://' + domain + delivery_path
+        + adQueryString + '"></scr' + 'ipt>';
+var htmlPrefix = "<html><head><title></title><style type='text/css'>img{max-width:100%;height:auto}</style></head><body style='padding:0px;margin:0px;'>";
+
+
+var htmlSuffix = "<![if !IE]><script type='text/javascript'>document.close();</script><![endif]></body></html>";
+
+if (isInIframe()) {
+  // document.write(fpTag);
+   var s = document.createElement("script");
+   s.type = "text/javascript";
+    s.src = fpIfm;
+   document.getElementsByTagName("head")[0].appendChild(s);
+} else {
+    
+  if (WZRDS_AdsiFrame_Opts !== null) {
+    
+    var placement = WZRDS_placement_id || "WZRDS_FPI_" + getQueryStringArg(qs, 'z', 0);
+    scriptTag = document.getElementById(placement) || getScriptTag();
+  
+  } else {
+    scriptTag = getScriptTag();
+  }
+  
+
+  var ifrm = createiFrame(id, width, height);
+
+  scriptTag.parentNode.insertBefore(ifrm, scriptTag);
+
+  abf = getWZRDSAtf(id, getWZRDSViewport());
+
+  adQueryString = getWZRDSQueryString(id, qs, abf, false);
+  adQueryString += "&dt=in";
+  adQueryString += "&buyerid=" + escape(buyer_id);
+  adQueryString += "&loc=" + escape(getSiteURL());
+  adQueryString += "&ref=" + escape(getRefSiteURL());
+  adQueryString += "&ifr=" + (isInIframe() ? '1' : '0');
+  adQueryString += "&tld=" + escape(getOD());
+  adQueryString += "&sndprc=" + escape(sndprc);
+  adQueryString += "&ui=" + ui;
+  adQueryString += "&ct=" + escape(ct_url);
+  adQueryString += "&org_tld=" + escape(org_tld);
+  adQueryString += "&dnt=" + dnt;
+  adQueryString += "&pvid=" + cubex.configIdPageView;
+  adQueryString += "&pvc=" + cubex.pvcount;
+  adQueryString += "&rn=" + cubex.reqn;
+  adQueryString += "&scmt=" + cubex.scrollamount;
+  adQueryString += "&reqts=" + time;
+  if (typeof jsci != "undefined") {
+    adQueryString += "&jsci=" + jsci;
+  }
+adQueryString += "&pdf=" + browserFeatures.pdf + "&realp=" + browserFeatures.realp + "&wma=" + browserFeatures.wma + "&dir=" + browserFeatures.dir + "&fla=" + browserFeatures.fla + "&java=" + browserFeatures.java + "&gears=" + browserFeatures.gears + "&ag=" + browserFeatures.ag + "&cookie=" + browserFeatures.cookie + "&rw=" + browserFeatures.resw + "&rh=" + browserFeatures.resh  + "&pxr=" + browserFeatures.pxratio + "&hcc=" + browserFeatures.hardwareConcurrency;
+
+if (typeof networkState != "undefined") {
+  adQueryString += "&dn=" + networkState.downlink + "&et=" + networkState.effectiveType + "&rtt=" + networkState.rtt;
+}
+  if (performanceAlias && performanceAlias.timing && performanceAlias.timing.requestStart && performanceAlias.timing.responseEnd) {
+    adQueryString += "&p_ms=" + (performanceAlias.timing.responseEnd - performanceAlias.timing.requestStart);
+  }
+  adQueryString += "&cb=" + cb;
+  adQueryString += "&title=" + title;
+  adQueryString += "&kywrd=" + keywords;
+  adQueryString += "&wiztag=" + wiztag;
+
+  if (hb == "true") {
+    adQueryString += "&hb="           + hb;
+    adQueryString += "&hb_adid="        + hb_adid;
+    adQueryString += "&hb_bidder="        + hb_bidder;
+    adQueryString += "&hb_adsquare_bidder_id="  + hb_adsquare_bidder_id;
+    adQueryString += "&hb_pb="          + hb_pb;
+    adQueryString += "&houseAds="         + houseAds;
+  }
+ 
+  fpTag = '<scr'+'ipt type="text/javascript" src="https://' + domain + delivery_path + adQueryString + '"></scr'+'ipt>';
+
+  function isHidden(id) {
+    el = document.getElementById(id);
+    return (el.offsetParent === null)
+  }
+
+  var cracktest = isHidden(id);
+
+  if (cracktest == false) {
+    if(getQueryStringArg(qs, 'WZRDS_src', '0') === '1') {
+      
+      var ad_server_domain = getQueryStringArg(qs, 'WZRDS_ad_domain', adserver_domain);
+      ifrm.src = 'https://' + ad_server_domain + delivery_path + adQueryString;
+      
+    } else {
+      
+      var ifr_content = ifrm.contentWindow.document || ifrm.contentDocument;
+      ifr_content.write(htmlPrefix + fpTag + htmlSuffix);
+      
+    }
+  }
+
+
+var timer_gear;
+var is_visible;
+var clock;
+var sec = 0;
+var triggeronce = false;
+var a=document.getElementById(id);
+a.dataset.sn = cubex.reqn;
+
+    var visibility = getWZRDSVisibility(id, getWZRDSViewport(), width, height);
+    if (visibility == 1) {
+      if (is_visible != true){
+        clock = setInterval(stopWatch, 1000);
+      }
+      is_visible = true;
+    } else {
+      is_visible = false;
+      clearInterval(clock);
+      sec = 0;
+    }
+
+    function trigger() {
+      triggeronce = true;
+      a.dataset.visible = "true";
+      a.dataset.scrollamount = cubex.scrollamount;
+    }
+
+    function stopWatch() {
+        sec++;
+        if (sec >= 3 && triggeronce == false) {
+          trigger();
+        }
+    }
+
+  function position(id) {
+    var visibility = getWZRDSVisibility(id, getWZRDSViewport(), width, height);
+    if (visibility == 1) {
+      if (is_visible != true){
+        clock = setInterval(stopWatch, 1000);
+      }
+      is_visible = true;
+    } else {
+      is_visible = false;
+      clearInterval(clock);
+      sec = 0;
+    }
+  }
+
+
+
+}
+
+  return {};
+})();
+
+WZRDS_placement_id = null;
+WZRDS_AdsiFrame_Opts = null;

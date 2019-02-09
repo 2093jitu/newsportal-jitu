@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>sign in</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="css/all.css"/>
+    <style>
+		.FNM{
+		
+			height:30px;
+			width:300px;
+			margin-top:30px;
+			
+					
+		}
+	
+	
+	</style>
+</head>
+
+<body>
+<section >
+    <div class="container ">
+        <div class="row">
+            <div class="col-md-5">
+                <img src="" alt="">
+            </div>
+            <div class="col-md-12" align="center">
+                <div class="">
+                   <h1> <b>Login Form</b></h1>
+                </div>
+            </div>
+        </div>
+        <hr class="hr1"/>
+    </div>
+</section>
+<br/>
+<section>
+    <div class="container">
+        <div class="row">
+            <form class="form"  >
+                <table align="center">
+				
+					<tr >
+                       
+                        <td  >
+                            <input type="text" id="FAST_NAME" placeholder="FAST NAME" class="FNM">
+                        </td>
+                    </tr>
+				
+				
+                    <tr >
+                        
+                        <td  >
+                            <input type="text" id="username" placeholder="LAST NAME" class="FNM">
+                        </td>
+                    </tr>
+                    <tr>
+                        
+                        <td >
+                            <input type="password" id="password" placeholder="PASSWORD" class="FNM"> 
+                        </td>
+                    </tr>
+                    <tr>
+                        
+                        <td><br><br>
+                            <input type="checkbox" class="">Remember Password <br><br>
+							
+                            <input type="button" value="SUBMIT" onclick="sign_in()" class=""><br><br>
+							
+                            <a href="" class="" >Forgot password</a>
+							<br><br>
+                        </td>
+
+                    </tr>
+                </table>
+            </form>
+        </div>
+    </div>
+</section>
+<script>
+
+    function sign_in() {
+        var user = document.getElementById("username").value;
+        var pass = document.getElementById("password").value;
+
+        if((user == 'Rabiul')&&(pass == '1234')){
+            location.href="p.html"
+        }else {
+            alert("Your User name or Password is not correct")
+        }
+    }
+
+</script>
+<script src="js/jquery-1.12.4.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+</body>
+</html>
